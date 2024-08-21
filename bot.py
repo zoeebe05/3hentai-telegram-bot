@@ -1,81 +1,60 @@
 import os
 import re
 import requests
-from bs4 import BeautifulSoup
-from telegram import Update, Bot
-from telegram.ext import Updater, CommandHandler, CallbackContext
-from PIL import Image
-import shutil
-import zipfile
+from telebot import TeleBot
 
-# Configura tu token de bot de Telegram
+# Función para limpiar el nombre de la página
+def clean_filename(name):
+    # Eliminar caracteres no permitidos y letras no inglesas
+    name = re.sub(r'[^a-zA-Z0-9\s]', '', name)
+    return name
+
+# Obtener el token del bot de Telegram desde una variable de entorno
 TOKEN = os.getenv('TOKEN')
-bot = Bot(token=TOKEN)
+if not TOKEN:
+    raise ValueError("El token del bot de Telegram no está configurado en las variables de entorno.")
 
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('¡Hola! Usa /d <Código> para comenzar.')
+bot = TeleBot(TOKEN)
 
-def download_images(update: Update, context: CallbackContext) -> None:
-    code = context.args[0]
-    user_id = update.message.from_user.id
-    chat_id = os.getenv('teleuser')
-    bot.send_message(chat_id=chat_id, text='Estoy listo')
-    
-    url = f'https:/es.3hentai.net/d/{code}'
+@bot.message_handler(commands=['info'])
+def send_info(message):
+    # Obtener el código del comando
+    code = message.text.split()[1] if len(message.text.split()) > 1 else None
+    if not code:
+        bot.reply_to(message, "Por favor, proporciona un código.")
+        return
+
+    # Construir la URL
+    url = f"https://www/d/{code}/"
+
+    # Obtener el contenido de la página
     response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    
-    # Captura todos los links de imágenes
-    image_links = [img['src'] for img in soup.find_all('img') if img['src'].endswith('.jpg')]
-    
-    # Edita los links de las imágenes
-    image_links = [link.replace('t.jpg', '.jpg') for link in image_links]
-    
-    # Captura el nombre de la página
-    page_name = soup.title.string.strip()
-    
-    # Elimina caracteres no válidos para nombres de archivos
-    page_name = re.sub(r'[\\/*?:"<>|]', "", page_name)
-    
-    # Nombre de la carpeta
-    folder_name = f"{page_name} ({code})"
-    
-    # Si el nombre de la carpeta es muy largo, reducir caracteres
-    if len(folder_name) > 255:
-        folder_name = folder_name[:255]
-    
-    # Crear la carpeta
-    os.makedirs(folder_name, exist_ok=True)
-    
-    # Descargar las imágenes
-    for i, link in enumerate(image_links):
-        img_data = requests.get(link).content
-        with open(os.path.join(folder_name, f'image_{i+1}.jpg'), 'wb') as handler:
-            handler.write(img_data)
-    
-    # Comprimir la carpeta en un archivo CBZ
-    cbz_filename = f"{folder_name}.cbz"
-    with zipfile.ZipFile(cbz_filename, 'w') as cbz:
-        for root, _, files in os.walk(folder_name):
-            for file in files:
-                cbz.write(os.path.join(root, file), arcname=file)
-    
-    # Enviar el archivo al usuario que lo solicitó
-    bot.send_document(chat_id=user_id, document=open(cbz_filename, 'rb'))
-    
-    # Limpiar archivos temporales
-    shutil.rmtree(folder_name)
-    os.remove(cbz_filename)
+    if response.status_code != 200:
+        bot.reply_to(message, "No se pudo acceder a la página.")
+        return
 
-def main() -> None:
-    updater = Updater(TOKEN)
-    dispatcher = updater.dispatcher
-    
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("d", download_images))
-    
-    updater.start_polling()
-    updater.idle()
+    # Extraer el nombre de la página (suponiendo que está en el título)
+    page_title = re.search(r'<title>(.*?)</title>', response.text).group(1)
+    clean_title = clean_filename(page_title) + f"_{code}"
+
+    # Descargar la imagen cover.jpg
+    image_url = f"{url}cover.jpg"
+    image_response = requests.get(image_url)
+    if image_response.status_code != 200:
+        bot.reply_to(message, "No se pudo descargar la imagen.")
+        return
+
+    # Guardar la imagen temporalmente
+    image_path = f"/tmp/{clean_title}.jpg"
+    with open(image_path, 'wb') as f:
+        f.write(image_response.content)
+
+    # Enviar la imagen y el texto al usuario
+    with open(image_path, 'rb') as photo:
+        bot.send_photo(message.chat.id, photo, caption=clean_title)
+
+    # Eliminar la imagen temporal
+    os.remove(image_path)
 
 if __name__ == '__main__':
-    main()
+    bot.polling()
