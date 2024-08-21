@@ -25,7 +25,7 @@ def send_info(message):
         return
 
     # Construir la URL
-    url = f"https://www/d/{code}/"
+    url = f"https://es.3hentai.net/d/{code}/"
 
     # Obtener el contenido de la página
     response = requests.get(url)
