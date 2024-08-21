@@ -61,14 +61,18 @@ def send_info(message):
         bot.send_photo(message.chat.id, photo, caption=clean_title)
 
     os.remove(image_path)
-  
- @bot.message_handler(commands=['d'])
+
+@bot.message_handler(commands=['d'])
 def handle_d(message):
     # Obtener el código enviado después del comando /d
     codigo = message.text.split()[1]
     url = f'https://es.3hentai.net/d/{codigo}'
     
     response = requests.get(url)
+    if response.status_code != 200:
+        bot.reply_to(message, "No se pudo acceder a la página.")
+        return
+
     soup = BeautifulSoup(response.content, 'html.parser')
     
     # Capturar el nombre de la página
@@ -76,7 +80,7 @@ def handle_d(message):
     
     # Modificar el nombre eliminando caracteres no válidos y letras no inglesas
     valid_name = re.sub(r'[^a-zA-Z0-9]', '_', page_title)
-    valid_name += '_codigo'
+    valid_name += f'_{codigo}'
     
     # Crear carpeta para las imágenes
     if not os.path.exists(valid_name):
@@ -113,9 +117,6 @@ def handle_d(message):
         for file in files:
             os.remove(os.path.join(root, file))
     os.rmdir(valid_name)
-    
-
 
 if __name__ == '__main__':
     bot.polling()
-    
