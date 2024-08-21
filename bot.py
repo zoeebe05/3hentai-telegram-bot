@@ -61,10 +61,13 @@ def send_info(message):
         bot.send_photo(message.chat.id, photo, caption=clean_title)
 
     os.remove(image_path)
+  
+ @bot.message_handler(commands=['d'])
+def handle_d(message):
+    # Obtener el código enviado después del comando /d
+    codigo = message.text.split()[1]
+    url = f'https://es.3hentai.net/d/{codigo}'
     
-@bot.message_handler(commands=['d_codigo'])
-def handle_d_codigo(message):
-    url = 'https://es.3hentai.net/d/código'
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     
@@ -110,6 +113,7 @@ def handle_d_codigo(message):
         for file in files:
             os.remove(os.path.join(root, file))
     os.rmdir(valid_name)
+    
 
 
 if __name__ == '__main__':
