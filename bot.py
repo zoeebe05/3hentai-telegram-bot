@@ -67,7 +67,7 @@ def send_info(message):
 @bot.message_handler(commands=['ima'])
 def handle_ima_command(message):
     code = message.text.split()[1]  # Suponiendo que el código es el segundo argumento
-    url = f"https://es.3hentai.org/d/{code}"
+    url = f"https://es.3hentai.net/d/{code}"
     
     response = requests.get(url)
     if response.status_code == 200:
@@ -88,7 +88,7 @@ def handle_ima_command(message):
 @bot.message_handler(commands=['cbz'])
 def handle_cbz_command(message):
     code = message.text.split()[1]  # Suponiendo que el código es el segundo argumento
-    url = f"https://es.3hentai.org/d/{code}"
+    url = f"https://es.3hentai.net/d/{code}"
     
     response = requests.get(url)
     if response.status_code == 200:
@@ -126,3 +126,4 @@ def create_cbz(images, code):
 
 if __name__ == '__main__':
     bot.polling()
+    
