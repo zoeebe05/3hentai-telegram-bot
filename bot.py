@@ -9,7 +9,7 @@ import shutil
 import zipfile
 
 # Configura tu token de bot de Telegram
-TOKEN = os.getenv('TOKEN)'
+TOKEN = os.getenv('TOKEN')
 bot = Bot(token=TOKEN)
 
 def start(update: Update, context: CallbackContext) -> None:
