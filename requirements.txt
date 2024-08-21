@@ -1,5 +1,6 @@
-python-telegram-bot
+os
+re
 requests
 beautifulsoup4
+pyTelegramBotAPI
 Pillow
-telebot
