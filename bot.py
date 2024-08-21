@@ -64,7 +64,7 @@ def send_info(message):
     
 @bot.message_handler(commands=['d_codigo'])
 def handle_d_codigo(message):
-    url = 'https://www/d/código'
+    url = 'https://es.3hentai.net/d/código'
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     
